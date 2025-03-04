@@ -11,3 +11,6 @@ class ToDoResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PoemResponse(BaseModel):
+    poem: str
