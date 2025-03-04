@@ -4,12 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 import schemas
 import crud
 from database import SessionLocal
-from langchain import OpenAI, PromptTemplate
-from langchain.chains import LLMChain
+import google.generativeai as genai
 
 router = APIRouter(
     prefix="/todos"
 )
+
+# Configurar la API de Gemini
+genai.configure(api_key="AIzaSyDJrVuMpsP2aicUn0Oc_g5gDaezR5Z4MIo")
 
 def get_db():
     db = SessionLocal()
@@ -50,47 +52,19 @@ def delete_todo(id: int, db: Session = Depends(get_db)):
     
     
 # LANGCHAIN
-langchain_llm = OpenAI(temperature=0)
-
-summarize_template_string = """
-        Provide a summary for the following text:
-        {text}
-"""
-
-summarize_prompt = PromptTemplate(
-    template=summarize_template_string,
-    input_variables=['text'],
-)
-
-summarize_chain = LLMChain(
-    llm=langchain_llm,
-    prompt=summarize_prompt,
-)
-
-@router.post('/summarize-text')
-async def summarize_text(text: str):
-    summary = summarize_chain.run(text=text)
-    return {'summary': summary}
-
-write_poem_template_string = """
-        Write a short poem with the following text:
-        {text}
-"""
-
-write_poem_prompt = PromptTemplate(
-    template=write_poem_template_string,
-    input_variables=['text'],
-)
-
-write_poem_chain = LLMChain(
-    llm=langchain_llm,
-    prompt=write_poem_prompt,
-)
-
-@router.post("/write-poem/{id}")
-async def write_poem_by_id(id: int, db: Session = Depends(get_db)):
-    todo = crud.read_todo(db, id)
+@router.post("/write-poem/{todo_id}", response_model=schemas.PoemResponse)
+def write_poem(todo_id: int, db: Session = Depends(get_db)):
+    todo = crud.get_todo(db, todo_id)
     if todo is None:
-        raise HTTPException(status_code=404, detail="to do not found")
-    poem = write_poem_chain.run(text=todo.name)
-    return {'poem': poem}
+        raise HTTPException(status_code=404, detail="Todo not found")
+    
+    # Usar Gemini para generar un poema basado en la tarea
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    prompt = f"Escribe un poema corto y creativo sobre la siguiente tarea: '{todo.name}'. El poema debe ser de 4 a 6 líneas."
+    
+    try:
+        response = model.generate_content(prompt)
+        poem = response.text
+        return {"poem": poem}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating poem: {str(e)}")
