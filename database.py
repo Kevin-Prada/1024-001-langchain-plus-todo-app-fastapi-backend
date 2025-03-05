@@ -14,7 +14,7 @@ host = os.environ['DATABASE_HOST']
 port = os.environ['DATABASE_PORT']
 db_name = os.environ['DATABASE_NAME']
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
