@@ -2,10 +2,10 @@ from typing import List
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 import schemas
+import models
 import crud
 from database import SessionLocal
 import google.generativeai as genai
-import models
 
 router = APIRouter(
     prefix="/todos"
@@ -21,47 +21,39 @@ def get_db():
     finally:
         db.close()
 
-@router.post("", status_code=status.HTTP_201_CREATED)
-def create_todo(todo: schemas.ToDoRequest, db: Session = Depends(get_db)):
-    todo = crud.create_todo(db, todo)
-    return todo
+@router.post("", response_model=schemas.Todo)
+def create_todo(todo: schemas.TodoCreate, db: Session = Depends(get_db)):
+    return crud.create_todo(db=db, todo=todo)
 
-@router.get("", response_model=List[schemas.ToDoResponse])
-def get_todos(completed: bool = None, db: Session = Depends(get_db)):
-    todos = crud.read_todos(db, completed)
+@router.get("", response_model=List[schemas.Todo])
+def read_todos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    todos = crud.get_todos(db, skip=skip, limit=limit)
     return todos
 
-@router.get("/{id}")
-def get_todo_by_id(id: int, db: Session = Depends(get_db)):
-    todo = crud.read_todo(db, id)
-    if todo is None:
-        raise HTTPException(status_code=404, detail="to do not found")
-    return todo
+@router.get("/{todo_id}", response_model=schemas.Todo)
+def read_todo(todo_id: int, db: Session = Depends(get_db)):
+    db_todo = crud.get_todo(db, todo_id=todo_id)
+    if db_todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return db_todo
 
-@router.put("/{id}")
-def update_todo(id: int, todo: schemas.ToDoRequest, db: Session = Depends(get_db)):
-    todo = crud.update_todo(db, id, todo)
-    if todo is None:
-        raise HTTPException(status_code=404, detail="to do not found")
-    return todo
+@router.put("/{todo_id}", response_model=schemas.Todo)
+def update_todo(todo_id: int, todo: schemas.TodoUpdate, db: Session = Depends(get_db)):
+    db_todo = crud.update_todo(db, todo_id=todo_id, todo=todo)
+    if db_todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return db_todo
 
-@router.delete("/{id}", status_code=status.HTTP_200_OK)
-def delete_todo(id: int, db: Session = Depends(get_db)):
-    res = crud.delete_todo(db, id)
-    if res is None:
-        raise HTTPException(status_code=404, detail="to do not found")
-    
-    
-# LANGCHAIN
+@router.delete("/{todo_id}", response_model=schemas.Todo)
+def delete_todo(todo_id: int, db: Session = Depends(get_db)):
+    db_todo = crud.delete_todo(db, todo_id=todo_id)
+    if db_todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return db_todo
+
 @router.post("/write-poem/{todo_id}", response_model=schemas.PoemResponse)
 def write_poem(todo_id: int, db: Session = Depends(get_db)):
-    # Verificar si la función get_todo existe en el módulo crud
-    if not hasattr(crud, 'get_todo'):
-        # Si no existe, implementar una solución alternativa
-        todo = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
-    else:
-        todo = crud.get_todo(db, todo_id)
-    
+    todo = crud.get_todo(db, todo_id)
     if todo is None:
         raise HTTPException(status_code=404, detail="Todo not found")
     

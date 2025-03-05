@@ -26,7 +26,7 @@ def read_todo(db: Session, id: int):
 def update_todo(db: Session, todo_id: int, todo: schemas.TodoUpdate):
     db_todo = get_todo(db, todo_id)
     if db_todo:
-        for key, value in todo.dict(exclude_unset=True).items():
+        for key, value in todo.model_dump(exclude_unset=True).items():
             setattr(db_todo, key, value)
         db.commit()
         db.refresh(db_todo)

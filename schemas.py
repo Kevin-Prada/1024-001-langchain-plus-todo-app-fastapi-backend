@@ -1,16 +1,27 @@
+from typing import Optional, List
 from pydantic import BaseModel
 
-class ToDoRequest(BaseModel):
+# Esquema base para Todo
+class TodoBase(BaseModel):
     name: str
-    completed: bool
+    completed: bool = False
 
-class ToDoResponse(BaseModel):
-    name: str
-    completed: bool
+# Esquema para crear un Todo
+class TodoCreate(TodoBase):
+    pass
+
+# Esquema para actualizar un Todo
+class TodoUpdate(BaseModel):
+    name: Optional[str] = None
+    completed: Optional[bool] = None
+
+# Esquema para respuesta de Todo
+class Todo(TodoBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Antes era orm_mode = True en Pydantic v1
 
+# Esquema para respuesta de poema
 class PoemResponse(BaseModel):
     poem: str
