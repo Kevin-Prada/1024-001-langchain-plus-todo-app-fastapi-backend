@@ -5,6 +5,7 @@ import schemas
 import crud
 from database import SessionLocal
 import google.generativeai as genai
+import models
 
 router = APIRouter(
     prefix="/todos"
@@ -54,7 +55,13 @@ def delete_todo(id: int, db: Session = Depends(get_db)):
 # LANGCHAIN
 @router.post("/write-poem/{todo_id}", response_model=schemas.PoemResponse)
 def write_poem(todo_id: int, db: Session = Depends(get_db)):
-    todo = crud.get_todo(db, todo_id)
+    # Verificar si la función get_todo existe en el módulo crud
+    if not hasattr(crud, 'get_todo'):
+        # Si no existe, implementar una solución alternativa
+        todo = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
+    else:
+        todo = crud.get_todo(db, todo_id)
+    
     if todo is None:
         raise HTTPException(status_code=404, detail="Todo not found")
     
