@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 import schemas
 import models
 import crud
@@ -26,22 +26,20 @@ def create_todo(todo: schemas.TodoCreate, db: Session = Depends(get_db)):
     return crud.create_todo(db=db, todo=todo)
 
 @router.get("", response_model=List[schemas.Todo])
-def read_todos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    todos = crud.get_todos(db, skip=skip, limit=limit)
-    return todos
-
-# ... existing code ...
-
-@router.get("", response_model=List[schemas.Todo])
-def read_todos(skip: int = 0, limit: int = 100, completed: Optional[bool] = None, db: Session = Depends(get_db)):
-    # Modificar para permitir filtrado por estado de completado
+def read_todos(
+    skip: int = 0, 
+    limit: int = 100, 
+    completed: Optional[bool] = Query(None, description="Filter by completion status"), 
+    db: Session = Depends(get_db)
+):
+    # Si se proporciona el parámetro completed, filtrar por ese valor
     if completed is not None:
+        # Consulta directa a la base de datos con filtro
         todos = db.query(models.Todo).filter(models.Todo.completed == completed).offset(skip).limit(limit).all()
     else:
+        # Usar la función existente para obtener todas las tareas
         todos = crud.get_todos(db, skip=skip, limit=limit)
     return todos
-
-# ... existing code ...
 
 @router.get("/{todo_id}", response_model=schemas.Todo)
 def read_todo(todo_id: int, db: Session = Depends(get_db)):
