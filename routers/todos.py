@@ -30,6 +30,19 @@ def read_todos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     todos = crud.get_todos(db, skip=skip, limit=limit)
     return todos
 
+# ... existing code ...
+
+@router.get("", response_model=List[schemas.Todo])
+def read_todos(skip: int = 0, limit: int = 100, completed: Optional[bool] = None, db: Session = Depends(get_db)):
+    # Modificar para permitir filtrado por estado de completado
+    if completed is not None:
+        todos = db.query(models.Todo).filter(models.Todo.completed == completed).offset(skip).limit(limit).all()
+    else:
+        todos = crud.get_todos(db, skip=skip, limit=limit)
+    return todos
+
+# ... existing code ...
+
 @router.get("/{todo_id}", response_model=schemas.Todo)
 def read_todo(todo_id: int, db: Session = Depends(get_db)):
     db_todo = crud.get_todo(db, todo_id=todo_id)
