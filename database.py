@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#SQLALCHEMY_DATABASE_URL = f"postgresql://{os.environ['DATABASE_USER']}:@{os.environ['DATABASE_HOST']}/{os.environ['DATABASE_NAME']}"
+SQLALCHEMY_DATABASE_URL = "postgresql://neondb_owner:npg_d5jVEZOqr4nw@ep-plain-mode-a8tq1tu6-pooler.eastus2.azure.neon.tech/neondb?sslmode=require"
 
 user = os.environ['DATABASE_USER']
 password = os.environ['DATABASE_PASSWORD']
